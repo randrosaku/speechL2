@@ -7,12 +7,23 @@ import numpy as np
 import seaborn as sns
 
 import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, LearningRateScheduler
+from tensorflow.keras.callbacks import (
+    EarlyStopping,
+    ModelCheckpoint,
+    LearningRateScheduler,
+)
 
 from IPython import display
 
-from utils import squeeze, get_spectrogram, plot_spectrogram, \
-    make_spec_ds, RNN, step_decay, plot_curves
+from utils import (
+    squeeze,
+    get_spectrogram,
+    plot_spectrogram,
+    make_spec_ds,
+    RNN,
+    step_decay,
+    plot_curves,
+)
 
 seed = 42
 tf.random.set_seed(seed)
@@ -27,7 +38,8 @@ train_ds, val_ds = tf.keras.utils.audio_dataset_from_directory(
     validation_split=0.2,
     seed=0,
     output_sequence_length=16000,
-    subset='both')
+    subset="both",
+)
 
 label_names = np.array(train_ds.class_names)
 print("label names:", label_names)
@@ -48,19 +60,50 @@ for example_spectrograms, example_spect_labels in train_spectrogram_ds.take(1):
     break
 
 input_shape = example_spectrograms.shape[1:]
-print('Input shape:', input_shape)
+print("Input shape:", input_shape)
 num_labels = len(label_names)
 
 # Training model
 model = RNN(input_shape, num_labels, train_spectrogram_ds)
 
 lrate = LearningRateScheduler(step_decay)
-earlystopper = EarlyStopping(monitor='val_accuracy', patience=10, verbose=1, restore_best_weights=True)
-checkpointer = ModelCheckpoint('model_best_1.h5', monitor='val_accuracy', verbose=1, save_best_only=True)
+earlystopper = EarlyStopping(
+    monitor="val_accuracy", patience=10, verbose=1, restore_best_weights=True
+)
+checkpointer = ModelCheckpoint(
+    "model_best_3.h5", monitor="val_accuracy", verbose=1, save_best_only=True
+)
 
-history = model.fit(train_spectrogram_ds, validation_data=val_spectrogram_ds, epochs=60, use_multiprocessing=False, workers=4, verbose=1,
-                    callbacks=[earlystopper, checkpointer, lrate])
+history = model.fit(
+    train_spectrogram_ds,
+    validation_data=val_spectrogram_ds,
+    epochs=60,
+    use_multiprocessing=False,
+    workers=4,
+    verbose=1,
+    callbacks=[earlystopper, checkpointer, lrate],
+)
 
-plot_curves(history)
+metrics = history.history
+plt.figure(figsize=(16, 6))
+plt.subplot(1, 2, 1)
+plt.plot(history.epoch, metrics["loss"], metrics["val_loss"])
+plt.legend(["loss", "val_loss"])
+plt.ylim([0, max(plt.ylim())])
+plt.xlabel("Epoch")
+plt.ylabel("Loss [CrossEntropy]")
 
-model.save('model_last_1.h5')
+plt.subplot(1, 2, 2)
+plt.plot(
+    history.epoch,
+    100 * np.array(metrics["accuracy"]),
+    100 * np.array(metrics["val_accuracy"]),
+)
+plt.legend(["accuracy", "val_accuracy"])
+plt.ylim([0, 100])
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy [%]")
+
+plt.savefig("loss_acc_3.png")
+
+model.save("model_last_3.h5")
