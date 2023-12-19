@@ -2,9 +2,7 @@ import os
 import pathlib
 
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 import numpy as np
-import seaborn as sns
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import (
@@ -22,7 +20,6 @@ from utils import (
     make_spec_ds,
     RNN,
     step_decay,
-    plot_curves,
 )
 
 seed = 42
